@@ -7,22 +7,12 @@
 </head>
 <body>
   <h1>Fire Data Visualizations</h1>
-
-  <!-- Fire Radiative Power (FRP) Map Visualization -->
-  <div>
-    <h2>Fire Radiative Power (FRP) Visualization</h2>
-    <div id="vis1"></div>
-  </div>
-
-  <!-- Fire Area by Australian Jurisdiction Bar Chart -->
-  <div>
-    <h2>Fire Area by Australian Jurisdiction</h2>
-    <div id="vis2"></div>
-  </div>
-
+  
+  <!-- Fire Data Map Visualization -->
+  <h2>Fire Data Map</h2>
+  <div id="fire-map"></div>
   <script>
-    // First visualization: Fire Radiative Power (FRP) map
-    const spec1 = {
+    const fireMapSpec = {
       "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
       "width": 800,
       "height": 450,
@@ -35,7 +25,7 @@
           "bind": {
             "input": "range",
             "min": 100,
-            "max": 1000,
+            "max": 2000,
             "step": 10,
             "name": "FRP Threshold: "
           }
@@ -56,29 +46,77 @@
           "transform": [
             {"filter": "datum.confidence > 90 && datum.frp > frpThreshold"}
           ],
-          "mark": {"type": "circle", "tooltip": {"content": "data"}},
+          "mark": {"type": "circle"},
           "encoding": {
             "longitude": {"field": "longitude", "type": "quantitative"},
             "latitude": {"field": "latitude", "type": "quantitative"},
             "size": {
+              "field": "scan",
+              "type": "quantitative",
+              "title": "Scan",
+              "scale": {"domain": [0, 1]}
+            },
+            "color": {
               "field": "frp",
               "type": "quantitative",
               "title": "Fire Radiative Power (FRP)",
-              "scale": {"domain": [100, 1000]}
+              "scale": {"scheme": "reds", "domain": [100, 1000, 2000]}
             },
-            "color": {
-              "field": "brightness",
-              "type": "quantitative",
-              "title": "Brightness",
-              "scale": {"scheme": "reds"}
-            }
+            "tooltip": [
+              {
+                "field": "acq_date",
+                "type": "temporal",
+                "title": "Date",
+                "timeUnit": "yearmonthdate",
+                "format": "%d/%m/%Y"
+              },
+              {
+                "field": "frp",
+                "type": "quantitative",
+                "title": "Fire Radiative Power (FRP)"
+              },
+              {"field": "scan", "type": "quantitative", "title": "Scan Size"},
+              {"field": "brightness", "type": "quantitative", "title": "Brightness"}
+            ]
+          }
+        },
+        {
+          "data": {
+            "url": "https://raw.githubusercontent.com/prakritd2/FIT3179/refs/heads/main/fire_archive_M6_96619.csv"
+          },
+          "transform": [
+            {"filter": "datum.confidence > 90 && datum.frp > frpThreshold"},
+            {
+              "window": [{"op": "rank", "as": "rank"}],
+              "sort": [{"field": "frp", "order": "descending"}]
+            },
+            {"filter": "datum.rank == 1"}
+          ],
+          "mark": {
+            "type": "text",
+            "align": "left",
+            "dx": 5,
+            "dy": -10,
+            "fontSize": 12,
+            "fontWeight": "bold"
+          },
+          "encoding": {
+            "longitude": {"field": "longitude", "type": "quantitative"},
+            "latitude": {"field": "latitude", "type": "quantitative"},
+            "text": {"value": "Highest detected Intensity campfire"}
           }
         }
-      ]
+      ],
+      "config": {}
     };
-
-    // Second visualization: Fire Area by Australian Jurisdiction bar chart
-    const spec2 = {
+    vegaEmbed("#fire-map", fireMapSpec, {mode: "vega-lite"}).then(console.log).catch(console.warn);
+  </script>
+  
+  <!-- Fire Area by Jurisdiction Visualization -->
+  <h2>Fire Area by Australian Jurisdiction</h2>
+  <div id="fire-area"></div>
+  <script>
+    const fireAreaSpec = {
       "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
       "width": 800,
       "height": 450,
@@ -108,16 +146,27 @@
         },
         "tooltip": [
           {"field": "Jurisdiction", "type": "nominal", "title": "Jurisdiction"},
-          {"field": "Fire_area_000_hectares", "type": "quantitative", "title": "Fire Area (000 hectares)"},
-          {"field": "Forest_area_in_fire_area_000_hectares", "type": "quantitative", "title": "Forest Area (000 hectares)"},
-          {"field": "Proportion_forest_fire_area", "type": "quantitative", "title": "Proportion of Forested Fire Area (%)"}
+          {
+            "field": "Fire_area_000_hectares",
+            "type": "quantitative",
+            "title": "Fire Area (000 hectares)"
+          },
+          {
+            "field": "Forest_area_in_fire_area_000_hectares",
+            "type": "quantitative",
+            "title": "Forest Area (000 hectares)"
+          },
+          {
+            "field": "Proportion_forest_fire_area",
+            "type": "quantitative",
+            "title": "Proportion of Forested Fire Area (%)"
+          }
         ]
-      }
+      },
+      "config": {}
     };
-
-    // Embed both visualizations
-    vegaEmbed("#vis1", spec1, {mode: "vega-lite"}).then(console.log).catch(console.warn);
-    vegaEmbed("#vis2", spec2, {mode: "vega-lite"}).then(console.log).catch(console.warn);
+    vegaEmbed("#fire-area", fireAreaSpec, {mode: "vega-lite"}).then(console.log).catch(console.warn);
   </script>
+  
 </body>
 </html>
