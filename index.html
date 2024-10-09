@@ -6,49 +6,118 @@
   <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.26.0"></script>
 </head>
 <body>
-  <div id="vis"/>
+  <h1>Fire Data Visualizations</h1>
+
+  <!-- Fire Radiative Power (FRP) Map Visualization -->
+  <div>
+    <h2>Fire Radiative Power (FRP) Visualization</h2>
+    <div id="vis1"></div>
+  </div>
+
+  <!-- Fire Area by Australian Jurisdiction Bar Chart -->
+  <div>
+    <h2>Fire Area by Australian Jurisdiction</h2>
+    <div id="vis2"></div>
+  </div>
+
   <script>
-    const spec = {
-  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-  "width": 800,
-  "height": 450,
-  "title": "Fire Data Visualization",
-  "projection": {"type": "equalEarth"},
-  "layer": [
-    {
+    // First visualization: Fire Radiative Power (FRP) map
+    const spec1 = {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "width": 800,
+      "height": 450,
+      "title": "Fire Data Visualization",
+      "projection": {"type": "mercator"},
+      "params": [
+        {
+          "name": "frpThreshold",
+          "value": 750,
+          "bind": {
+            "input": "range",
+            "min": 100,
+            "max": 1000,
+            "step": 10,
+            "name": "FRP Threshold: "
+          }
+        }
+      ],
+      "layer": [
+        {
+          "data": {
+            "url": "https://raw.githubusercontent.com/prakritd2/FIT3179/refs/heads/main/ne_50m.json",
+            "format": {"type": "topojson", "feature": "ne_50m_admin_0_countries"}
+          },
+          "mark": {"type": "geoshape", "fill": "lightgray", "stroke": "black"}
+        },
+        {
+          "data": {
+            "url": "https://raw.githubusercontent.com/prakritd2/FIT3179/refs/heads/main/fire_archive_M6_96619.csv"
+          },
+          "transform": [
+            {"filter": "datum.confidence > 90 && datum.frp > frpThreshold"}
+          ],
+          "mark": {"type": "circle", "tooltip": {"content": "data"}},
+          "encoding": {
+            "longitude": {"field": "longitude", "type": "quantitative"},
+            "latitude": {"field": "latitude", "type": "quantitative"},
+            "size": {
+              "field": "frp",
+              "type": "quantitative",
+              "title": "Fire Radiative Power (FRP)",
+              "scale": {"domain": [100, 1000]}
+            },
+            "color": {
+              "field": "brightness",
+              "type": "quantitative",
+              "title": "Brightness",
+              "scale": {"scheme": "reds"}
+            }
+          }
+        }
+      ]
+    };
+
+    // Second visualization: Fire Area by Australian Jurisdiction bar chart
+    const spec2 = {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "width": 800,
+      "height": 450,
+      "title": "Fire Area by Australian Jurisdiction",
       "data": {
-        "url": "https://raw.githubusercontent.com/prakritd2/FIT3179/refs/heads/main/ne_50m.json",
-        "format": {"type": "topojson", "feature": "ne_50m_admin_0_countries"}
+        "url": "https://raw.githubusercontent.com/prakritd2/FIT3179/refs/heads/main/table1.csv",
+        "format": {"type": "csv"}
       },
-      "mark": {"type": "geoshape", "fill": "lightgray", "stroke": "black"}
-    },
-    {
-      "data": {
-        "url": "https://raw.githubusercontent.com/prakritd2/FIT3179/refs/heads/main/fire_archive_M6_96619.csv"
-      },
-      "mark": {"type": "circle", "tooltip": {"content": "data"}},
+      "mark": "bar",
       "encoding": {
-        "longitude": {"field": "longitude", "type": "quantitative"},
-        "latitude": {"field": "latitude", "type": "quantitative"},
-        "size": {
-          "field": "confidence",
+        "x": {
+          "field": "Jurisdiction",
+          "type": "nominal",
+          "title": "Jurisdiction",
+          "axis": {"labelAngle": -45}
+        },
+        "y": {
+          "field": "Fire_area_000_hectares",
           "type": "quantitative",
-          "title": "Confidence",
-          "scale": {"domain": [90, 100]}
+          "title": "Fire Area (000 hectares)"
         },
         "color": {
-          "field": "frp",
+          "field": "Proportion_forest_fire_area",
           "type": "quantitative",
-          "title": "Fire Radiative Power",
-          "bin": {"maxbins": 5, "extent": [100, 1000]},
-          "scale": {"scheme": "reds"}
-        }
+          "title": "Proportion of Forested Fire Area (%)",
+          "scale": {"scheme": "blues"}
+        },
+        "tooltip": [
+          {"field": "Jurisdiction", "type": "nominal", "title": "Jurisdiction"},
+          {"field": "Fire_area_000_hectares", "type": "quantitative", "title": "Fire Area (000 hectares)"},
+          {"field": "Forest_area_in_fire_area_000_hectares", "type": "quantitative", "title": "Forest Area (000 hectares)"},
+          {"field": "Proportion_forest_fire_area", "type": "quantitative", "title": "Proportion of Forested Fire Area (%)"}
+        ]
       }
-    }
-  ],
-  "config": {}
-};
-    vegaEmbed("#vis", spec, {mode: "vega-lite"}).then(console.log).catch(console.warn);
+    };
+
+    // Embed both visualizations
+    vegaEmbed("#vis1", spec1, {mode: "vega-lite"}).then(console.log).catch(console.warn);
+    vegaEmbed("#vis2", spec2, {mode: "vega-lite"}).then(console.log).catch(console.warn);
   </script>
 </body>
 </html>
